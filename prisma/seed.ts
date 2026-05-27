@@ -62,12 +62,12 @@ async function main() {
 
   const customers = await Promise.all(
     [
-      { fullName: "Maya Rodriguez", email: "maya@northwind.example" },
-      { fullName: "David Chen", email: "david@northwind.example" },
-      { fullName: "Aisha Patel", email: "aisha@northwind.example" },
-      { fullName: "Marcus Holloway", email: "marcus@northwind.example" },
-      { fullName: "Yusuf Khalil", email: "yusuf@northwind.example" },
-      { fullName: "Lena Park", email: "lena@northwind.example" },
+      { fullName: "Cici Mao", email: "cici@ciaas.example" },
+      { fullName: "Xiaoxi Zhang", email: "xiaoxi@ciaas.example" },
+      { fullName: "Guan Li", email: "guan@ciaas.example" },
+      { fullName: "Elon Mask", email: "elon@ciaas.example" },
+      { fullName: "Jack Dorsey", email: "jack@ciaas.example" },
+      { fullName: "Mark Zuckerberg", email: "mark@ciaas.example" },
     ].map((c) =>
       prisma.customer.create({
         data: { ...c, businessId: northwind.id },
