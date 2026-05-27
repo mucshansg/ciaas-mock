@@ -217,6 +217,12 @@ async function main() {
 }
 
 main()
+  const existing = await prisma.business.count();
+  if (existing > 0) {
+    console.log("DB already seeded, skipping.");
+    return;
+  }
+
   .catch((e) => {
     console.error(e);
     process.exit(1);
