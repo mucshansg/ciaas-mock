@@ -3,6 +3,12 @@ import { mockIssueCard } from "../src/lib/mockIssuer";
 
 const prisma = new PrismaClient();
 
+const existing = await prisma.business.count();
+if (existing > 0) {
+  console.log("DB already seeded, skipping.");
+  return;
+}
+
 async function main() {
   // Clean slate
   await prisma.alert.deleteMany();
@@ -217,14 +223,9 @@ async function main() {
 }
 
 main()
-  const existing = await prisma.business.count();
-  if (existing > 0) {
-    console.log("DB already seeded, skipping.");
-    return;
-  }
-
   .catch((e) => {
     console.error(e);
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());
+
