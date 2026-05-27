@@ -1,15 +1,16 @@
 import { PrismaClient } from "@prisma/client";
 import { mockIssueCard } from "../src/lib/mockIssuer";
 
-const prisma = new PrismaClient();
-
-const existing = await prisma.business.count();
-if (existing > 0) {
-  console.log("DB already seeded, skipping.");
-  return;
-}
 
 async function main() {
+  const prisma = new PrismaClient();
+
+  const existing = await prisma.business.count();
+  if (existing > 0) {
+    console.log("DB already seeded, skipping.");
+    return;
+  }
+
   // Clean slate
   await prisma.alert.deleteMany();
   await prisma.auditEvent.deleteMany();
