@@ -5,11 +5,11 @@ const prisma = new PrismaClient();
 
 async function main() {
   
-  const existing = await prisma.business.count();
-  if (existing > 0) {
-    console.log("DB already seeded, skipping.");
-    return;
-  }
+ // const existing = await prisma.business.count();
+ // if (existing > 0) {
+ //   console.log("DB already seeded, skipping.");
+ //   return;
+ // }
 
   // Clean slate
   await prisma.alert.deleteMany();
