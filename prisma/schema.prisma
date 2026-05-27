@@ -1,0 +1,115 @@
+// CIaaS Mock — Prisma schema
+// Multi-tenant by businessId, no row-level security (mock app).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// A Business is a tenant — the merchant/operator using the platform.
+model Business {
+  id              String        @id @default(cuid())
+  name            String
+  industry        String
+  programBalance  Int           @default(0) // cents
+  createdAt       DateTime      @default(now())
+
+  customers       Customer[]
+  cards           Card[]
+  transactions    Transaction[]
+  fundings        Funding[]
+  auditEvents     AuditEvent[]
+  alerts          Alert[]
+}
+
+// The end-cardholder.
+model Customer {
+  id           String   @id @default(cuid())
+  businessId   String
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  fullName     String
+  email        String
+  createdAt    DateTime @default(now())
+
+  cards        Card[]
+  transactions Transaction[]
+}
+
+// A virtual card.
+model Card {
+  id            String       @id @default(cuid())
+  businessId    String
+  business      Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customerId    String
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // Mock issuer reference
+  issuerCardId  String       @unique // e.g. "lithic_card_xxx"
+  last4         String
+  expMonth      Int
+  expYear       Int
+  fullPan       String       // Mock only — would never be stored in real life
+  cvv           String       // Mock only
+
+  status        String       @default("active") // active | suspended | terminated
+  spendLimit    Int          @default(100000)   // cents; per-card cap
+  createdAt     DateTime     @default(now())
+
+  transactions  Transaction[]
+}
+
+// A captured or declined card authorization.
+model Transaction {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  cardId      String
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  merchant    String
+  amount      Int      // cents, positive = debit, negative = refund
+  status      String   // captured | authorized | declined | refund
+  declineReason String?
+  createdAt   DateTime @default(now())
+}
+
+// A funding event — wire/ACH into the program account.
+model Funding {
+  id            String   @id @default(cuid())
+  businessId    String
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  amount        Int      // cents
+  source        String   // bank name
+  status        String   @default("settled") // pending | settled | held
+  holdReason    String?
+  createdAt     DateTime @default(now())
+}
+
+// Append-only audit log
+model AuditEvent {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  actor       String   // "system", user name, etc.
+  action      String   // card.issued, card.suspended, txn.captured, etc.
+  details     String   // JSON-encoded payload
+  createdAt   DateTime @default(now())
+}
+
+// Alerts surfaced on the dashboard.
+model Alert {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  kind        String   // warn | bad | info
+  title       String
+  body        String
+  createdAt   DateTime @default(now())
+  dismissedAt DateTime?
+}
