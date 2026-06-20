@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paymentech — Card issuing infrastructure</title>
+<style>
+
+  @font-face {
+    font-family: 'Fallback';
+  }
+
+  :root{
+    --ink:        #0E1B2B;
+    --paper:      #F7F7F4;
+    --panel:      #14253A;
+    --panel-2:    #1B2F47;
+    --green:      #3D6B4F;
+    --green-soft: #DCE8DF;
+    --amber:      #C9862E;
+    --amber-soft: #F3E3CB;
+    --slate:      #8A9BA8;
+    --line:       rgba(247,247,244,0.12);
+    --line-dark:  rgba(14,27,43,0.12);
+
+    --font-display: 'Fragment-Display', 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+    --font-body: 'Inter-Fallback', 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', ui-monospace, Menlo, monospace;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,72,500;0,72,600;1,72,500&display=swap');
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  a{ color:inherit; text-decoration:none; }
+  button{ font-family:inherit; cursor:pointer; border:none; background:none; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 32px; }
+
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+
+  /* ============ TOP BAR ============ */
+  header.site{
+    position:sticky; top:0; z-index:50;
+    background:rgba(247,247,244,0.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line-dark);
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    height:72px;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-weight:600; font-size:18px; letter-spacing:-0.01em;
+  }
+  .logo .mark{
+    width:26px; height:26px; border-radius:6px;
+    background:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--paper); font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600;
+  }
+  nav.links{ display:flex; gap:36px; }
+  nav.links a{
+    font-size:14.5px; color:var(--ink); opacity:0.72;
+    transition:opacity 0.15s;
+  }
+  nav.links a:hover{ opacity:1; }
+  .nav-actions{ display:flex; align-items:center; gap:18px; }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:10px 18px; border-radius:7px;
+    font-size:14.5px; font-weight:600;
+    transition:transform 0.15s ease, box-shadow 0.15s ease, background 0.15s;
+  }
+  .btn-ghost{ color:var(--ink); opacity:0.85; }
+  .btn-ghost:hover{ opacity:1; }
+  .btn-primary{
+    background:var(--ink); color:var(--paper);
+  }
+  .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(14,27,43,0.25); }
+
+  @media (max-width: 880px){
+    nav.links{ display:none; }
+  }
+
+  /* ============ HERO ============ */
+  .hero{
+    padding:88px 0 0;
+    position:relative;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap:64px;
+    align-items:center;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--green); font-weight:500;
+    padding:6px 0;
+  }
+  .eyebrow::before{
+    content:''; width:6px; height:6px; border-radius:50%;
+    background:var(--green); display:inline-block;
+  }
+  h1.hero-head{
+    font-family:'Newsreader', serif;
+    font-weight:600;
+    font-size:clamp(40px, 5vw, 62px);
+    line-height:1.04;
+    letter-spacing:-0.01em;
+    margin:18px 0 22px;
+    color:var(--ink);
+  }
+  h1.hero-head em{
+    font-style:italic;
+    color:var(--green);
+  }
+  .hero-sub{
+    font-size:18px; line-height:1.55;
+    color:var(--ink); opacity:0.68;
+    max-width:480px;
+    margin-bottom:34px;
+  }
+  .hero-ctas{
+    display:flex; align-items:center; gap:22px;
+    margin-bottom:46px;
+  }
+  .btn-lg{ padding:14px 26px; font-size:15px; border-radius:8px; }
+  .link-arrow{
+    font-size:14.5px; font-weight:600; color:var(--ink);
+    display:inline-flex; align-items:center; gap:6px;
+    border-bottom:1px solid var(--line-dark);
+    padding-bottom:2px;
+  }
+  .hero-meta{
+    display:flex; gap:36px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px; color:var(--ink); opacity:0.55;
+  }
+  .hero-meta div{ display:flex; flex-direction:column; gap:4px; }
+  .hero-meta b{ font-size:13px; opacity:1; color:var(--ink); font-weight:600;}
+
+  @media (max-width: 880px){
+    .hero-grid{ grid-template-columns:1fr; }
+    .hero{ padding-top:56px; }
+  }
+
+  /* ===== Ledger tape — signature element ===== */
+  .ledger-card{
+    background:var(--ink);
+    border-radius:14px;
+    padding:26px 0 0;
+    box-shadow:0 30px 70px -20px rgba(14,27,43,0.45);
+    position:relative;
+    overflow:hidden;
+  }
+  .ledger-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:0 26px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  .ledger-head .label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--slate);
+  }
+  .ledger-balance{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--paper); font-size:15px; font-weight:600;
+  }
+  .ledger-balance span{ color:var(--green); font-size:12px; margin-left:6px; font-weight:500;}
+
+  .tape-viewport{
+    height:330px;
+    overflow:hidden;
+    position:relative;
+  }
+  .tape-viewport::after{
+    content:'';
+    position:absolute; inset:0;
+    background:linear-gradient(180deg, transparent 0%, transparent 78%, var(--ink) 100%);
+    pointer-events:none;
+  }
+  .tape-track{
+    display:flex; flex-direction:column;
+    animation: scrollTape 18s linear infinite;
+  }
+  @keyframes scrollTape{
+    0%{ transform:translateY(0); }
+    100%{ transform:translateY(-50%); }
+  }
+  .tape-row{
+    display:grid;
+    grid-template-columns: 30px 1fr auto auto;
+    align-items:center;
+    gap:14px;
+    padding:13px 26px;
+    border-bottom:1px solid var(--line);
+    font-size:13.5px;
+  }
+  .tape-icon{
+    width:28px; height:28px; border-radius:7px;
+    background:var(--panel-2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:600; color:var(--paper);
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .tape-merchant{ color:var(--paper); font-weight:500; }
+  .tape-card{ color:var(--slate); font-family:'IBM Plex Mono', monospace; font-size:11.5px; display:block; margin-top:2px;}
+  .tape-amt{ font-family:'IBM Plex Mono', monospace; color:var(--paper); font-weight:500; text-align:right; }
+  .tape-status{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px; letter-spacing:0.04em;
+    padding:3px 8px; border-radius:20px;
+    text-align:center; white-space:nowrap;
+  }
+  .st-cap{ background:rgba(61,107,79,0.25); color:#7FC79A; }
+  .st-auth{ background:rgba(138,155,168,0.18); color:var(--slate); }
+  .st-dec{ background:rgba(201,134,46,0.22); color:#E3A861; }
+
+  @media (prefers-reduced-motion: reduce){
+    .tape-track{ animation:none; }
+  }
+
+  /* ============ LOGO / TRUST STRIP ============ */
+  .trust{
+    padding:54px 0 50px;
+    border-top:1px solid var(--line-dark);
+    border-bottom:1px solid var(--line-dark);
+    margin-top:90px;
+  }
+  .trust-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--ink); opacity:0.45; margin-bottom:26px;
+  }
+  .trust-row{
+    display:flex; gap:56px; flex-wrap:wrap;
+    font-family:'Newsreader', serif; font-style:italic;
+    font-size:21px; opacity:0.55;
+  }
+
+  /* ============ SECTION SHARED ============ */
+  section{ padding:110px 0; }
+  .section-head{ max-width:620px; margin-bottom:64px; }
+  .section-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--green); font-weight:500; margin-bottom:16px; display:block;
+  }
+  h2.section-title{
+    font-family:'Newsreader', serif; font-weight:600;
+    font-size:clamp(30px, 3.4vw, 42px);
+    line-height:1.12; letter-spacing:-0.01em;
+  }
+  .section-sub{
+    font-size:16.5px; color:var(--ink); opacity:0.65; line-height:1.6;
+    margin-top:16px;
+  }
+
+  /* ============ HOW IT WORKS — three surfaces ============ */
+  .surfaces{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+    background:var(--line-dark);
+    border:1px solid var(--line-dark);
+    border-radius:16px;
+    overflow:hidden;
+  }
+  .surface{
+    background:var(--paper);
+    padding:38px 32px 42px;
+    transition:background 0.2s;
+  }
+  .surface:hover{ background:#FFFFFF; }
+  .surface-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--slate); margin-bottom:18px; display:block;
+  }
+  .surface h3{
+    font-family:'Newsreader', serif; font-weight:600; font-size:23px;
+    margin-bottom:12px;
+  }
+  .surface p{
+    font-size:14.5px; line-height:1.6; color:var(--ink); opacity:0.68;
+    margin-bottom:20px;
+  }
+  .surface-feats{ list-style:none; display:flex; flex-direction:column; gap:9px; }
+  .surface-feats li{
+    font-size:13.5px; color:var(--ink); opacity:0.8;
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .surface-feats li::before{
+    content:'—'; color:var(--green); font-weight:600; flex-shrink:0;
+  }
+
+  @media (max-width: 880px){
+    .surfaces{ grid-template-columns:1fr; }
+  }
+
+  /* ============ STATS / STATE MACHINE STRIP ============ */
+  .statecard{
+    background:var(--ink); border-radius:18px;
+    padding:64px 56px;
+    display:grid; grid-template-columns:1fr 1fr; gap:60px;
+    align-items:center;
+  }
+  .statecard-copy h2{
+    font-family:'Newsreader', serif; font-style:italic; font-weight:500;
+    color:var(--paper); font-size:30px; line-height:1.3; margin-bottom:18px;
+  }
+  .statecard-copy p{
+    color:var(--slate); font-size:15px; line-height:1.65;
+  }
+  .state-flow{
+    display:flex; align-items:center; flex-wrap:wrap; gap:0;
+    font-family:'IBM Plex Mono', monospace; font-size:13px;
+  }
+  .state-pill{
+    padding:8px 14px; border-radius:20px;
+    border:1px solid var(--line);
+    color:var(--paper);
+  }
+  .state-pill.active{ background:var(--green); border-color:var(--green); color:#fff; }
+  .state-pill.suspended{ background:var(--amber); border-color:var(--amber); color:#1a1208; }
+  .state-pill.terminated{ background:var(--panel-2); color:var(--slate); }
+  .state-arrow{ color:var(--slate); padding:0 12px; }
+
+  @media (max-width: 880px){
+    .statecard{ grid-template-columns:1fr; padding:44px 28px; gap:36px; }
+  }
+
+  /* ============ FEATURE LIST (alternating) ============ */
+  .feat-row{
+    display:grid; grid-template-columns:1fr 1fr; gap:80px;
+    align-items:center;
+    padding:70px 0;
+    border-bottom:1px solid var(--line-dark);
+  }
+  .feat-row:first-child{ padding-top:0; }
+  .feat-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .feat-row.reverse .feat-visual{ order:2; }
+  .feat-num{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px;
+    color:var(--green); margin-bottom:14px; display:block;
+  }
+  .feat-row h3{
+    font-family:'Newsreader', serif; font-weight:600; font-size:28px;
+    margin-bottom:14px; max-width:420px;
+  }
+  .feat-row p{ font-size:15.5px; line-height:1.65; opacity:0.68; max-width:420px; }
+
+  .visual-box{
+    background:var(--panel); border-radius:14px; padding:28px;
+    font-family:'IBM Plex Mono', monospace; font-size:13px;
+    color:var(--paper);
+  }
+  .visual-box .row{
+    display:flex; justify-content:space-between; padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .visual-box .row:last-child{ border-bottom:none; }
+  .visual-box .muted{ color:var(--slate); }
+  .visual-box .pos{ color:#7FC79A; }
+  .visual-box .neg{ color:#E3A861; }
+
+  @media (max-width: 880px){
+    .feat-row, .feat-row.reverse .feat-visual{ grid-template-columns:1fr; order:initial; }
+    .feat-row{ grid-template-columns:1fr; gap:30px; }
+  }
+
+  /* ============ CTA BAND ============ */
+  .cta-band{
+    background:var(--green);
+    border-radius:20px;
+    padding:72px 64px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .cta-band h2{
+    font-family:'Newsreader', serif; font-weight:600;
+    color:#fff; font-size:clamp(28px,3.6vw,40px);
+    margin-bottom:16px;
+  }
+  .cta-band p{ color:var(--green-soft); font-size:16px; margin-bottom:34px; }
+  .cta-band .btn-primary{ background:#fff; color:var(--ink); }
+  .cta-band .btn-ghost-light{ color:#fff; opacity:0.85; }
+
+  /* ============ FOOTER ============ */
+  footer{
+    border-top:1px solid var(--line-dark);
+    padding:64px 0 40px;
+  }
+  .foot-grid{
+    display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr;
+    gap:40px; margin-bottom:56px;
+  }
+  .foot-brand .logo{ margin-bottom:14px; }
+  .foot-brand p{ font-size:14px; opacity:0.6; max-width:260px; line-height:1.6; }
+  .foot-col h4{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px;
+    letter-spacing:0.06em; text-transform:uppercase;
+    opacity:0.5; margin-bottom:18px;
+  }
+  .foot-col a{
+    display:block; font-size:14.5px; opacity:0.75; margin-bottom:13px;
+  }
+  .foot-col a:hover{ opacity:1; }
+  .foot-bottom{
+    display:flex; justify-content:space-between; align-items:center;
+    padding-top:28px; border-top:1px solid var(--line-dark);
+    font-size:13px; opacity:0.5;
+  }
+  @media (max-width: 880px){
+    .foot-grid{ grid-template-columns:1fr 1fr; }
+  }
+
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a href="#" class="logo">
+      <span class="mark">P/</span>
+      Paymentech
+    </a>
+    <nav class="links">
+      <a href="#platform">Platform</a>
+      <a href="#surfaces">How it works</a>
+      <a href="#program">Program controls</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#docs">Docs</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-ghost">Sign in</a>
+      <a href="#cta" class="btn btn-primary">Talk to sales</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">Card issuing infrastructure</span>
+        <h1 class="hero-head">Issue cards your<br>customers actually<br><em>carry.</em></h1>
+        <p class="hero-sub">
+          Paymentech gives you the rails to launch branded debit and prepaid card programs —
+          issuing, funding, authorization logic, and lifecycle controls — without becoming a bank.
+        </p>
+        <div class="hero-ctas">
+          <a href="#cta" class="btn btn-primary btn-lg">Get program access</a>
+          <a href="#surfaces" class="link-arrow">See the three surfaces →</a>
+        </div>
+        <div class="hero-meta">
+          <div><b>~140ms</b> avg. authorization decision</div>
+          <div><b>99.97%</b> platform uptime, trailing 12mo</div>
+          <div><b>Same-day</b> program funding via wire or ACH</div>
+        </div>
+      </div>
+
+      <div class="ledger-card">
+        <div class="ledger-head">
+          <span class="label">Northwind Logistics · Live</span>
+          <span class="ledger-balance">$244,500.00 <span>available</span></span>
+        </div>
+        <div class="tape-viewport">
+          <div class="tape-track" id="tapeTrack"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST -->
+  <div class="wrap trust">
+    <div class="trust-label">Built for finance and engineering teams shipping card programs</div>
+    <div class="trust-row">
+      <span>Northwind Logistics</span>
+      <span>Halyard Health</span>
+      <span>Crestview Capital</span>
+      <span>Underbridge Freight</span>
+      <span>Solace Payroll</span>
+    </div>
+  </div>
+
+  <!-- THREE SURFACES -->
+  <section id="surfaces">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">One program, three surfaces</span>
+        <h2 class="section-title">A control plane for you, a wallet for them, oversight for everyone.</h2>
+        <p class="section-sub">Every card program needs three different views into the same ledger. Paymentech ships all three, pre-wired to one source of truth.</p>
+      </div>
+
+      <div class="surfaces">
+        <div class="surface">
+          <span class="surface-tag">01 · For your team</span>
+          <h3>Operator dashboard</h3>
+          <p>Issue cards, fund the program, and watch authorizations land in real time — from one workspace.</p>
+          <ul class="surface-feats">
+            <li>Real-time auth and decline feed</li>
+            <li>Program balance and same-day funding</li>
+            <li>Card issuance and lifecycle actions</li>
+            <li>Spend alerts and verification queue</li>
+          </ul>
+        </div>
+        <div class="surface">
+          <span class="surface-tag">02 · For their customer</span>
+          <h3>Customer portal</h3>
+          <p>A self-serve wallet your customers sign into to manage the card you issued them.</p>
+          <ul class="surface-feats">
+            <li>Passwordless sign-in via one-time code</li>
+            <li>Card details, masked PAN, live balance</li>
+            <li>Report lost or stolen, instantly</li>
+            <li>Transaction history with merchant detail</li>
+          </ul>
+        </div>
+        <div class="surface">
+          <span class="surface-tag">03 · For compliance</span>
+          <h3>Ops console</h3>
+          <p>Cross-program visibility for the team accountable to your card network and your auditors.</p>
+          <ul class="surface-feats">
+            <li>Cross-business search, any card or customer</li>
+            <li>Append-only audit trail on every action</li>
+            <li>Suspend, reactivate, force-decline</li>
+            <li>Exportable history for network audits</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATE MACHINE -->
+  <section id="program">
+    <div class="wrap">
+      <div class="statecard">
+        <div class="statecard-copy">
+          <h2>"Suspended" should mean something — and prove it happened.</h2>
+          <p>Every card on Paymentech moves through a defined state machine, not a status field someone can quietly edit. Each transition is decided idempotently, the way a real issuer's authorization engine has to behave, and is written once to an append-only log that your ops team and your auditors can both trust.</p>
+        </div>
+        <div>
+          <div class="state-flow">
+            <span class="state-pill active">active</span>
+            <span class="state-arrow">→</span>
+            <span class="state-pill suspended">suspended</span>
+            <span class="state-arrow">→</span>
+            <span class="state-pill active">active</span>
+          </div>
+          <div class="state-flow" style="margin-top:18px;">
+            <span class="state-pill active">active</span>
+            <span class="state-arrow">→</span>
+            <span class="state-pill terminated">terminated</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ALTERNATING FEATURES -->
+  <section id="platform">
+    <div class="wrap">
+
+      <div class="feat-row">
+        <div>
+          <span class="feat-num">Funding</span>
+          <h3>Move money in before you move money out.</h3>
+          <p>Fund a program by wire or ACH and see it land in the available balance same-day, ahead of any 5pm ET cutoff. Every card draws from one program balance — no per-card pre-funding, no idle cash sitting on plastic.</p>
+        </div>
+        <div class="feat-visual">
+          <div class="visual-box">
+            <div class="row"><span class="muted">Program balance</span><span>$248,500.00</span></div>
+            <div class="row"><span class="muted">On cards</span><span>$4,000.00</span></div>
+            <div class="row"><span class="muted">Available</span><span class="pos">$244,500.00</span></div>
+            <div class="row"><span class="muted">Last funding</span><span>+ $25,000.00 · 2h ago</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feat-row reverse">
+        <div>
+          <span class="feat-num">Authorization</span>
+          <h3>Decisions made in milliseconds, explained in plain language.</h3>
+          <p>Every authorization runs against your program's rules before it ever reaches the network — balance checks, velocity limits, merchant category restrictions. When something declines, you and your customer both see exactly why.</p>
+        </div>
+        <div class="feat-visual">
+          <div class="visual-box">
+            <div class="row"><span>Shell · ••6630</span><span class="neg">DECLINED</span></div>
+            <div class="row"><span class="muted">Reason</span><span class="muted">insufficient available balance</span></div>
+            <div class="row"><span>Whole Foods · ••1054</span><span class="pos">CAPTURED</span></div>
+            <div class="row"><span class="muted">Decision time</span><span>112ms</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feat-row">
+        <div>
+          <span class="feat-num">Lifecycle</span>
+          <h3>Lost a card? That's a five-second fix, not a support ticket.</h3>
+          <p>Customers report a card lost or stolen directly from their portal. The card terminates immediately, the action is logged, and your operator dashboard reflects it before they've hung up the phone — because there's no phone call.</p>
+        </div>
+        <div class="feat-visual">
+          <div class="visual-box">
+            <div class="row"><span>Guan Li · ••1054</span><span style="color:var(--amber);">SUSPENDED</span></div>
+            <div class="row"><span class="muted">Reported by</span><span class="muted">customer portal</span></div>
+            <div class="row"><span class="muted">Logged to</span><span class="muted">audit trail</span></div>
+            <div class="row"><span class="muted">Reactivation</span><span>available to operator</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="cta">
+    <div class="wrap">
+      <div class="cta-band">
+        <h2>Bring your card program to Paymentech.</h2>
+        <p>Walk through a live demo with your data, or get sandbox access today.</p>
+        <div class="hero-ctas" style="justify-content:center;">
+          <a href="#" class="btn btn-primary btn-lg">Get sandbox access</a>
+          <a href="#" class="btn-ghost-light link-arrow" style="border-bottom-color:rgba(255,255,255,0.3);">Book a walkthrough →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a href="#" class="logo"><span class="mark">P/</span>Paymentech</a>
+        <p>Card issuing infrastructure for teams who want to launch a card program without becoming a bank.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Platform</h4>
+        <a href="#">Issuing</a>
+        <a href="#">Funding</a>
+        <a href="#">Authorization rules</a>
+        <a href="#">Audit & compliance</a>
+      </div>
+      <div class="foot-col">
+        <h4>Resources</h4>
+        <a href="#">Documentation</a>
+        <a href="#">API reference</a>
+        <a href="#">Status</a>
+        <a href="#">Security</a>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Careers</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Paymentech, Inc.</span>
+      <span>paymentech.com</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const tapeData = [
+    { tag:'U', merchant:'Uber', card:'Cici Mao · ••4271', amt:'− $18.40', status:'CAPTURED', cls:'st-cap' },
+    { tag:'W', merchant:'Walgreens', card:'Xiaoxi Zhang · ••8902', amt:'− $42.16', status:'AUTHORIZED', cls:'st-auth' },
+    { tag:'WF', merchant:'Whole Foods', card:'Guan Li · ••1054', amt:'− $127.55', status:'CAPTURED', cls:'st-cap' },
+    { tag:'S', merchant:'Shell', card:'Elon Mask · ••6630', amt:'− $65.20', status:'DECLINED', cls:'st-dec' },
+    { tag:'A', merchant:'Apple', card:'Jack Dorsey · ••9118', amt:'− $9.99', status:'CAPTURED', cls:'st-cap' },
+    { tag:'SP', merchant:'Spotify', card:'Mark Zuckerberg · ••7245', amt:'+ $11.99', status:'REFUND', cls:'st-auth' },
+    { tag:'D', merchant:'Delta Air Lines', card:'Priya Shah · ••3387', amt:'− $412.00', status:'CAPTURED', cls:'st-cap' },
+    { tag:'M', merchant:'Marriott', card:'Noah Kim · ••5521', amt:'− $289.10', status:'AUTHORIZED', cls:'st-auth' },
+  ];
+
+  function renderRow(d){
+    return `
+      <div class="tape-row">
+        <div class="tape-icon">${d.tag}</div>
+        <div>
+          <span class="tape-merchant">${d.merchant}</span>
+          <span class="tape-card">${d.card}</span>
+        </div>
+        <div class="tape-amt">${d.amt}</div>
+        <div class="tape-status ${d.cls}">${d.status}</div>
+      </div>`;
+  }
+
+  const track = document.getElementById('tapeTrack');
+  const doubled = [...tapeData, ...tapeData];
+  track.innerHTML = doubled.map(renderRow).join('');
+</script>
+
+</body>
+</html>

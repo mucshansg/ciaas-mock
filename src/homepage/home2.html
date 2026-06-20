@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PaymenTech — Card Issuance as a Service</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: #dbeafe;
+      --accent: #0f172a;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-400: #94a3b8;
+      --gray-500: #64748b;
+      --gray-600: #475569;
+      --gray-800: #1e293b;
+      --gray-900: #0f172a;
+      --radius: 12px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--gray-800);
+      background: #fff;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+    img { max-width: 100%; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-200);
+      transition: box-shadow .3s;
+    }
+    nav.scrolled { box-shadow: var(--shadow-md); }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 72px; max-width: 1200px; margin: 0 auto; padding: 0 24px;
+    }
+    .logo {
+      font-size: 1.5rem; font-weight: 800; color: var(--primary);
+      letter-spacing: -.02em;
+    }
+    .logo span { color: var(--accent); }
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a {
+      font-size: .9rem; font-weight: 500; color: var(--gray-600);
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--primary); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 10px 24px; border-radius: 8px; font-weight: 600;
+      font-size: .9rem; cursor: pointer; border: none; transition: all .2s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-outline {
+      background: transparent; color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    .btn-outline:hover { background: var(--primary); color: #fff; }
+    .btn-lg { padding: 14px 32px; font-size: 1rem; border-radius: 10px; }
+    .mobile-toggle { display: none; background: none; border: none; cursor: pointer; }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 160px 0 100px;
+      background: linear-gradient(165deg, #fff 0%, var(--primary-light) 50%, #eff6ff 100%);
+      position: relative; overflow: hidden;
+    }
+    .hero::after {
+      content: ''; position: absolute; top: -200px; right: -200px;
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(37,99,235,.08) 0%, transparent 70%);
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #fff; border: 1px solid var(--gray-200); border-radius: 100px;
+      padding: 6px 16px; font-size: .8rem; font-weight: 600; color: var(--primary);
+      margin-bottom: 24px; box-shadow: var(--shadow-sm);
+    }
+    .hero-badge .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+    .hero h1 {
+      font-size: 3.5rem; font-weight: 800; line-height: 1.1;
+      color: var(--gray-900); letter-spacing: -.03em; margin-bottom: 24px;
+    }
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--primary), #7c3aed);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.15rem; color: var(--gray-500); max-width: 520px;
+      margin-bottom: 36px; line-height: 1.7;
+    }
+    .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+    .hero-stats {
+      display: flex; gap: 40px; margin-top: 48px; padding-top: 32px;
+      border-top: 1px solid var(--gray-200);
+    }
+    .hero-stats .stat h3 { font-size: 1.75rem; font-weight: 800; color: var(--gray-900); }
+    .hero-stats .stat p { font-size: .8rem; color: var(--gray-400); font-weight: 500; margin-top: 2px; }
+
+    /* Card visual */
+    .hero-visual {
+      display: flex; justify-content: center; align-items: center;
+      position: relative; perspective: 1000px;
+    }
+    .card-3d {
+      width: 380px; height: 240px; border-radius: 20px;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+      padding: 32px; position: relative; overflow: hidden;
+      box-shadow: var(--shadow-xl), 0 0 60px rgba(37,99,235,.15);
+      transform: rotateY(-8deg) rotateX(5deg);
+      transition: transform .4s ease;
+    }
+    .card-3d:hover { transform: rotateY(0deg) rotateX(0deg); }
+    .card-3d::before {
+      content: ''; position: absolute; top: -50%; right: -50%;
+      width: 100%; height: 100%; border-radius: 50%;
+      background: radial-gradient(circle, rgba(37,99,235,.3), transparent 60%);
+    }
+    .card-3d .chip {
+      width: 48px; height: 36px; border-radius: 6px;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      margin-bottom: 24px; position: relative;
+    }
+    .card-3d .chip::after {
+      content: ''; position: absolute; inset: 4px;
+      border: 1px solid rgba(0,0,0,.15); border-radius: 3px;
+    }
+    .card-3d .card-number {
+      font-size: 1.15rem; letter-spacing: 3px; color: rgba(255,255,255,.85);
+      font-weight: 500; margin-bottom: 20px; position: relative;
+    }
+    .card-3d .card-bottom {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      position: relative;
+    }
+    .card-3d .card-holder { font-size: .75rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: 1px; }
+    .card-3d .card-holder span { display: block; font-size: .9rem; color: rgba(255,255,255,.9); margin-top: 4px; letter-spacing: .5px; }
+    .card-3d .card-brand { font-size: 1.5rem; font-weight: 800; color: rgba(255,255,255,.7); }
+    .floating-badge {
+      position: absolute; background: #fff; border-radius: 12px;
+      padding: 12px 18px; box-shadow: var(--shadow-lg);
+      display: flex; align-items: center; gap: 10px;
+      font-size: .8rem; font-weight: 600; color: var(--gray-800);
+      animation: float 3s ease-in-out infinite;
+    }
+    .floating-badge.badge-1 { top: -20px; right: -30px; animation-delay: 0s; }
+    .floating-badge.badge-2 { bottom: -20px; left: -30px; animation-delay: 1.5s; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .floating-badge .icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .floating-badge .icon.green { background: #dcfce7; }
+    .floating-badge .icon.blue { background: var(--primary-light); }
+
+    /* ── LOGOS ── */
+    .logos {
+      padding: 64px 0; background: var(--gray-50);
+      border-top: 1px solid var(--gray-200); border-bottom: 1px solid var(--gray-200);
+    }
+    .logos p { text-align: center; font-size: .85rem; color: var(--gray-400); font-weight: 500; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 1px; }
+    .logos-row {
+      display: flex; justify-content: center; align-items: center;
+      gap: 48px; flex-wrap: wrap; opacity: .5;
+    }
+    .logos-row span {
+      font-size: 1.25rem; font-weight: 700; color: var(--gray-400);
+      letter-spacing: -.01em;
+    }
+
+    /* ── FEATURES ── */
+    .features { padding: 100px 0; }
+    .section-header { text-align: center; max-width: 640px; margin: 0 auto 64px; }
+    .section-label {
+      display: inline-block; font-size: .8rem; font-weight: 700;
+      color: var(--primary); text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+    .section-header h2 {
+      font-size: 2.5rem; font-weight: 800; color: var(--gray-900);
+      letter-spacing: -.02em; margin-bottom: 16px;
+    }
+    .section-header p { font-size: 1.05rem; color: var(--gray-500); line-height: 1.7; }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px;
+    }
+    .feature-card {
+      background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius);
+      padding: 36px; transition: all .3s;
+    }
+    .feature-card:hover {
+      border-color: var(--primary); box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      width: 52px; height: 52px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 20px;
+    }
+    .feature-icon.blue { background: var(--primary-light); }
+    .feature-icon.green { background: #dcfce7; }
+    .feature-icon.purple { background: #ede9fe; }
+    .feature-icon.amber { background: #fef3c7; }
+    .feature-icon.rose { background: #ffe4e6; }
+    .feature-icon.cyan { background: #cffafe; }
+    .feature-card h3 { font-size: 1.15rem; font-weight: 700; color: var(--gray-900); margin-bottom: 10px; }
+    .feature-card p { font-size: .9rem; color: var(--gray-500); line-height: 1.7; }
+
+    /* ── HOW IT WORKS ── */
+    .how-it-works { padding: 100px 0; background: var(--gray-50); }
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; position: relative; }
+    .steps::before {
+      content: ''; position: absolute; top: 36px; left: 12%; right: 12%;
+      height: 2px; background: var(--gray-200);
+    }
+    .step { text-align: center; position: relative; }
+    .step-number {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: #fff; border: 2px solid var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 800; color: var(--primary);
+      margin: 0 auto 24px; position: relative; z-index: 1;
+    }
+    .step h3 { font-size: 1.05rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+    .step p { font-size: .85rem; color: var(--gray-500); line-height: 1.6; max-width: 220px; margin: 0 auto; }
+
+    /* ── API SECTION ── */
+    .api-section { padding: 100px 0; }
+    .api-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .api-content h2 {
+      font-size: 2.25rem; font-weight: 800; color: var(--gray-900);
+      letter-spacing: -.02em; margin-bottom: 16px;
+    }
+    .api-content p { font-size: 1.05rem; color: var(--gray-500); line-height: 1.7; margin-bottom: 24px; }
+    .api-code {
+      background: var(--gray-900); border-radius: var(--radius);
+      padding: 28px; overflow-x: auto; position: relative;
+    }
+    .api-code .dots {
+      display: flex; gap: 6px; margin-bottom: 20px;
+    }
+    .api-code .dots span { width: 10px; height: 10px; border-radius: 50%; }
+    .api-code .dots span:nth-child(1) { background: #ef4444; }
+    .api-code .dots span:nth-child(2) { background: #f59e0b; }
+    .api-code .dots span:nth-child(3) { background: #22c55e; }
+    .api-code pre {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: .82rem;
+      line-height: 1.8; color: #e2e8f0;
+    }
+    .api-code .keyword { color: #c084fc; }
+    .api-code .string { color: #86efac; }
+    .api-code .prop { color: #93c5fd; }
+    .api-code .comment { color: #64748b; }
+
+    /* ── USE CASES ── */
+    .use-cases { padding: 100px 0; background: var(--gray-50); }
+    .use-cases-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+    .use-case-card {
+      background: #fff; border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--gray-200); transition: all .3s;
+    }
+    .use-case-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); }
+    .use-case-img {
+      height: 180px; display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+    }
+    .use-case-img.fintech { background: linear-gradient(135deg, #dbeafe, #ede9fe); }
+    .use-case-img.neo { background: linear-gradient(135deg, #dcfce7, #cffafe); }
+    .use-case-img.embed { background: linear-gradient(135deg, #fef3c7, #ffe4e6); }
+    .use-case-body { padding: 28px; }
+    .use-case-body h3 { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+    .use-case-body p { font-size: .88rem; color: var(--gray-500); line-height: 1.7; }
+
+    /* ── CTA ── */
+    .cta {
+      padding: 100px 0;
+      background: linear-gradient(135deg, var(--primary-dark) 0%, #1e40af 50%, #312e81 100%);
+      text-align: center; color: #fff;
+    }
+    .cta h2 { font-size: 2.75rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 16px; }
+    .cta p { font-size: 1.1rem; opacity: .8; max-width: 560px; margin: 0 auto 36px; line-height: 1.7; }
+    .cta .btn { background: #fff; color: var(--primary-dark); }
+    .cta .btn:hover { background: var(--gray-100); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+    /* ── FOOTER ── */
+    footer { padding: 64px 0 32px; background: var(--gray-900); color: var(--gray-400); }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
+    .footer-brand .logo { color: #fff; margin-bottom: 16px; }
+    .footer-brand p { font-size: .88rem; line-height: 1.7; max-width: 300px; }
+    .footer-col h4 { font-size: .8rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+    .footer-col a { display: block; font-size: .88rem; color: var(--gray-400); margin-bottom: 10px; transition: color .2s; }
+    .footer-col a:hover { color: #fff; }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,.1);
+      padding-top: 24px; display: flex; justify-content: space-between;
+      align-items: center; font-size: .8rem;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .hero h1 { font-size: 2.75rem; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .steps { grid-template-columns: repeat(2, 1fr); gap: 40px; }
+      .steps::before { display: none; }
+      .api-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      .hero { padding: 120px 0 64px; }
+      .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+      .hero h1 { font-size: 2.25rem; }
+      .hero-visual { order: -1; }
+      .card-3d { width: 320px; height: 200px; padding: 24px; }
+      .card-3d .card-number { font-size: .95rem; }
+      .nav-links { display: none; }
+      .mobile-toggle { display: block; }
+      .features-grid { grid-template-columns: 1fr; }
+      .use-cases-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; }
+      .hero-stats { gap: 24px; }
+      .cta h2 { font-size: 2rem; }
+      .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+      .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="logo">Paymen<span>Tech</span></a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#api">API</a>
+        <a href="#use-cases">Use Cases</a>
+        <a href="#" class="btn btn-outline">Sign In</a>
+        <a href="#" class="btn btn-primary">Get Started</a>
+      </div>
+      <button class="mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('show')">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span class="dot"></span> Now in 40+ countries
+          </div>
+          <h1>Launch your<br/><span class="highlight">card program</span><br/>in weeks, not years</h1>
+          <p>PaymenTech provides Card Issuance as a Service — a single API to create, manage, and scale virtual and physical card programs. No banking licenses, no legacy integrations, no hassle.</p>
+          <div class="hero-actions">
+            <a href="#" class="btn btn-primary btn-lg">Start Building Free</a>
+            <a href="#api" class="btn btn-outline btn-lg">View API Docs</a>
+          </div>
+          <div class="hero-stats">
+            <div class="stat"><h3>50M+</h3><p>Cards Issued</p></div>
+            <div class="stat"><h3>99.99%</h3><p>Uptime SLA</p></div>
+            <div class="stat"><h3>&lt;200ms</h3><p>API Latency</p></div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="card-3d">
+            <div class="chip"></div>
+            <div class="card-number">•••• •••• •••• 4829</div>
+            <div class="card-bottom">
+              <div class="card-holder">Card Holder<span>JANE MERCHANT</span></div>
+              <div class="card-brand">VISA</div>
+            </div>
+          </div>
+          <div class="floating-badge badge-1">
+            <div class="icon green">✓</div>
+            Card Activated
+          </div>
+          <div class="floating-badge badge-2">
+            <div class="icon blue">⟳</div>
+            Real-time Auth
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGOS -->
+  <section class="logos">
+    <div class="container">
+      <p>Trusted by innovative companies worldwide</p>
+      <div class="logos-row">
+        <span>Revio</span>
+        <span>NexBank</span>
+        <span>Fino</span>
+        <span>Cardly</span>
+        <span>PayFlow</span>
+        <span>Ledgr</span>
+        <span>Walto</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Features</span>
+        <h2>Everything you need to issue cards at scale</h2>
+        <p>From instant virtual cards to fully branded physical cards, our platform handles the entire lifecycle — so you can focus on your product.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon blue">💳</div>
+          <h3>Virtual &amp; Physical Cards</h3>
+          <p>Issue virtual cards instantly or order physical cards with custom designs. Support for Visa, Mastercard, and private label networks.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon green">⚡</div>
+          <h3>Instant Issuance</h3>
+          <p>Go from API call to active card in under 200ms. Virtual cards are ready for use the moment they're created.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon purple">🔒</div>
+          <h3>PCI DSS Level 1</h3>
+          <p>Enterprise-grade security and compliance built in. We handle the complexity so you don't have to.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon amber">🎛️</div>
+          <h3>Spend Controls</h3>
+          <p>Set limits by amount, merchant category, geography, and time. Update rules in real time via API or dashboard.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon rose">📊</div>
+          <h3>Real-Time Analytics</h3>
+          <p>Track transactions, balances, and card usage as they happen. Webhooks and dashboards keep you informed.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon cyan">🔗</div>
+          <h3>White-Label Ready</h3>
+          <p>Brand every touchpoint — card designs, apps, notifications — as your own. Your customers never see our name.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">How It Works</span>
+        <h2>From signup to live cards in four steps</h2>
+        <p>Our streamlined onboarding gets you from zero to issuing cards faster than any other solution.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Integrate API</h3>
+          <p>Drop in our SDK or call the REST API. Most teams are up and running within a day.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Configure Program</h3>
+          <p>Set card types, spend limits, BIN sponsorship, and compliance rules in our dashboard.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Issue Cards</h3>
+          <p>Create virtual cards instantly or order physical cards with your custom branding.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <h3>Manage &amp; Scale</h3>
+          <p>Monitor, control, and grow your card program with real-time insights and webhooks.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- API -->
+  <section class="api-section" id="api">
+    <div class="container">
+      <div class="api-grid">
+        <div class="api-content">
+          <span class="section-label">Developer Experience</span>
+          <h2>A single API for the entire card lifecycle</h2>
+          <p>Create cards, manage balances, handle authorizations, and track transactions — all through one elegant RESTful API with comprehensive SDKs for every major language.</p>
+          <p>Webhooks for real-time events, sandbox environments for testing, and detailed documentation to get you moving fast.</p>
+          <a href="#" class="btn btn-primary">Explore API Reference</a>
+        </div>
+        <div class="api-code">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <pre><code><span class="comment">// Issue a new virtual card</span>
+<span class="keyword">const</span> card = <span class="keyword">await</span> paymentech.cards.<span class="prop">create</span>({
+  <span class="prop">type</span>: <span class="string">'virtual'</span>,
+  <span class="prop">currency</span>: <span class="string">'USD'</span>,
+  <span class="prop">spend_limit</span>: <span class="string">5000</span>,
+  <span class="prop">spend_limit_duration</span>: <span class="string">'monthly'</span>,
+  <span class="prop">cardholder</span>: {
+    <span class="prop">name</span>: <span class="string">'Jane Merchant'</span>,
+    <span class="prop">email</span>: <span class="string">'jane@company.co'</span>,
+  },
+});
+
+<span class="comment">// card.id → "card_9f8a2b7c"</span>
+<span class="comment">// card.last4 → "4829"</span>
+<span class="comment">// card.status → "active"</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section class="use-cases" id="use-cases">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Use Cases</span>
+        <h2>Purpose-built for modern card programs</h2>
+        <p>Whether you're a fintech startup or an established enterprise, PaymenTech adapts to your needs.</p>
+      </div>
+      <div class="use-cases-grid">
+        <div class="use-case-card">
+          <div class="use-case-img fintech">🏦</div>
+          <div class="use-case-body">
+            <h3>Fintech &amp; Neobanks</h3>
+            <p>Launch debit, credit, or prepaid card programs without obtaining your own banking license. We handle BIN sponsorship and compliance.</p>
+          </div>
+        </div>
+        <div class="use-case-card">
+          <div class="use-case-img neo">🛒</div>
+          <div class="use-case-body">
+            <h3>Expense Management</h3>
+            <p>Issue virtual cards to employees or departments with granular spend controls. Eliminate expense reports and receipt chasing.</p>
+          </div>
+        </div>
+        <div class="use-case-card">
+          <div class="use-case-img embed">🔌</div>
+          <div class="use-case-body">
+            <h3>Embedded Finance</h3>
+            <p>Add card issuance to your SaaS platform, marketplace, or app. Create new revenue streams with embedded financial products.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container">
+      <h2>Ready to issue your first card?</h2>
+      <p>Join hundreds of companies using PaymenTech to launch and scale card programs. Start in our sandbox — no commitment required.</p>
+      <a href="#" class="btn btn-lg">Get Started for Free</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="logo">Paymen<span>Tech</span></div>
+          <p>Card Issuance as a Service. We make it simple for any company to create, manage, and scale card programs.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="#">Virtual Cards</a>
+          <a href="#">Physical Cards</a>
+          <a href="#">Spend Controls</a>
+          <a href="#">Analytics</a>
+          <a href="#">API Reference</a>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="#">About Us</a>
+          <a href="#">Careers</a>
+          <a href="#">Blog</a>
+          <a href="#">Press</a>
+          <a href="#">Contact</a>
+        </div>
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <a href="#">Documentation</a>
+          <a href="#">Status Page</a>
+          <a href="#">Changelog</a>
+          <a href="#">Security</a>
+          <a href="#">Compliance</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 PaymenTech, Inc. All rights reserved.</span>
+        <span>
+          <a href="#">Privacy</a> &nbsp;·&nbsp; <a href="#">Terms</a> &nbsp;·&nbsp; <a href="#">Cookies</a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 10);
+    });
+  </script>
+
+</body>
+</html>
