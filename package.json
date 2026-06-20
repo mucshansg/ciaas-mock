@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-   "dev": "next dev",
+   "dev": "prisma generate && prisma db push && next dev",
   "build": "prisma generate && prisma db push && next build",
   "postbuild": "tsx prisma/seed.ts || true",
   "start": "next start",
